@@ -93,6 +93,7 @@ export function buildUI({ game, input, buzzer, model, state, actions }) {
         <button data-cam="x,1" title="Naar rechts (L)">▶</button>
         <button data-cam="zoom,-1" title="Inzoomen (U)">＋</button>
         <button data-cam="zoom,1" title="Uitzoomen (O)">－</button>
+        <button class="toggle" data-pad title="Touchpad-modus: twee vingers vegen = schuiven, knijpen = zoomen. Uit = scrollwiel zoomt (muis).">Touchpad</button>
       </div>
     </nav>
     <aside class="panel">
@@ -150,6 +151,11 @@ export function buildUI({ game, input, buzzer, model, state, actions }) {
     b.addEventListener("pointercancel", up);
     b.addEventListener("lostpointercapture", up);
   });
+  const padBtn = $("[data-pad]", root);
+  padBtn.addEventListener("click", () => actions.togglePad());
+  function syncPad(on) {
+    padBtn.classList.toggle("on", on);
+  }
   explode.addEventListener("input", () => actions.setExplode(+explode.value));
   $(".panel-toggle", root).addEventListener("click", () => panel.classList.toggle("collapsed"));
 
@@ -178,7 +184,7 @@ export function buildUI({ game, input, buzzer, model, state, actions }) {
       <table class="axes">${AXIS_HELP.map((a) => `<tr><td><i style="background:${a.color}"></i>${a.axis}</td><td>${a.stick}</td><td>${a.values}</td></tr>`).join("")}</table>
       <p class="small">Toetsenbord: <kbd>A</kbd><kbd>D</kbd> x · <kbd>W</kbd><kbd>S</kbd> y · <kbd>↑</kbd><kbd>↓</kbd> z · <kbd>←</kbd><kbd>→</kbd> w · <kbd>spatie</kbd>/<kbd>enter</kbd> = stick indrukken (vasthouden = hint).<br>
       Een PlayStation-controller via USB of Bluetooth werkt ook: sticks bewegen, <b>L3/R3</b> of <b>×</b> = drukken. <span data-s="pad"></span></p>
-      <p class="small"><b>Camera:</b> <kbd>I</kbd><kbd>K</kbd> omhoog/omlaag · <kbd>J</kbd><kbd>L</kbd> links/rechts · <kbd>U</kbd><kbd>O</kbd> in-/uitzoomen, of de knoppen ◀ ▲ ▼ ▶ linksonder. Muis: linksslepen = draaien, rechtsslepen = schuiven, scrollen = zoomen. Touchpad: twee vingers vegen = schuiven (links/rechts, omhoog/omlaag), knijpen = zoomen.</p>
+      <p class="small"><b>Camera:</b> <kbd>I</kbd><kbd>K</kbd> omhoog/omlaag · <kbd>J</kbd><kbd>L</kbd> links/rechts · <kbd>U</kbd><kbd>O</kbd> in-/uitzoomen, of de knoppen ◀ ▲ ▼ ▶ linksonder. Muis: linksslepen = draaien, rechtsslepen = schuiven, scrollen = zoomen. Touchpad: twee vingers vegen = schuiven (links/rechts, omhoog/omlaag), twee vingers naar elkaar toe/uit elkaar = zoomen. Wordt je touchpad niet herkend, zet dan de knop <b>Touchpad</b> linksonder aan (blijft bewaard).</p>
       <h3>LED-standen</h3>
       <div class="legend"><span><i class="led off"></i>uit</span><span><i class="led mid"></i>aan (middel)</span><span><i class="led hi"></i>gekozen (fel)</span><span><i class="led breath"></i>gekozen maar uit (ademt)</span></div>
       <h3>Instellingen (ook in de firmware)</h3>
@@ -508,7 +514,7 @@ export function buildUI({ game, input, buzzer, model, state, actions }) {
   }
 
   showTab(0);
-  return { tick, syncToggles, showSelection };
+  return { tick, syncToggles, showSelection, syncPad };
 }
 
 function tesseractIcon() {
