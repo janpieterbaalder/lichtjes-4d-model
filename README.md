@@ -8,7 +8,11 @@ Dit project bevat **alles** om hem te bouwen met een Arduino, een 3D-printer en 
 
 ## Openen
 
-**Dubbelklik `index.html`** (Edge/Chrome). Er is geen server of internet nodig: alles zit in `app/`.
+**Online:** <https://lichtjes-4d-model.vercel.app> — elke push naar `main` gaat automatisch live.
+
+**Lokaal:** dubbelklik `index.html` (Edge/Chrome). Er is geen server of internet nodig: alles zit in `app/`.
+
+**Camera:** linksslepen = draaien, rechtsslepen = schuiven, scrollen = zoomen, of de knoppen ◀ ▲ ▼ ▶ ＋ － linksonder (toetsen `I`/`K` omhoog/omlaag, `J`/`L` links/rechts, `U`/`O` zoomen).
 
 | Tabblad | Wat je ziet |
 | --- | --- |
