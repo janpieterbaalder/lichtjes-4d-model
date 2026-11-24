@@ -386,6 +386,34 @@ function moveCamera(dt) {
 }
 let lastFrame = performance.now();
 
+/* Touchpad: twee vingers schuiven = camera schuiven (links/rechts en omhoog/omlaag), knijpen = zoomen.
+   Een gewoon muiswiel blijft zoomen. Touchpads herken je aan horizontale of 'gebroken' scrollstappen. */
+let trackpadUntil = 0;
+container.addEventListener(
+  "wheel",
+  (e) => {
+    const now = performance.now();
+    const fractional = !Number.isInteger(e.deltaY) || !Number.isInteger(e.deltaX);
+    if (e.deltaMode === 0 && (e.deltaX !== 0 || fractional)) trackpadUntil = now + 400;
+    if (e.ctrlKey || now > trackpadUntil) return; // knijpen of muiswiel → OrbitControls zoomt
+    e.preventDefault();
+    e.stopPropagation();
+    camTween = null;
+    const k = Math.max(0.12, camera.position.distanceTo(controls.target)) * 0.0011;
+    camRight.setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
+    camOff.copy(camRight).multiplyScalar(e.deltaX * k);
+    camOff.y -= e.deltaY * k;
+    camera.position.add(camOff);
+    controls.target.add(camOff);
+    if (controls.target.y < 0.05) {
+      const d = 0.05 - controls.target.y;
+      controls.target.y += d;
+      camera.position.y += d;
+    }
+  },
+  { capture: true, passive: false },
+);
+
 /* ------------------------------------------------------------------ animatie */
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 let lastOled = 0;

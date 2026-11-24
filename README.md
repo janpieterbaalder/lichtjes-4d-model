@@ -12,7 +12,7 @@ Dit project bevat **alles** om hem te bouwen met een Arduino, een 3D-printer en 
 
 **Lokaal:** dubbelklik `index.html` (Edge/Chrome). Er is geen server of internet nodig: alles zit in `app/`.
 
-**Camera:** linksslepen = draaien, rechtsslepen = schuiven, scrollen = zoomen, of de knoppen ◀ ▲ ▼ ▶ ＋ － linksonder (toetsen `I`/`K` omhoog/omlaag, `J`/`L` links/rechts, `U`/`O` zoomen).
+**Camera:** linksslepen = draaien, rechtsslepen = schuiven, scrollen = zoomen; op een touchpad schuif je met twee vingers en zoom je door te knijpen. Of gebruik de knoppen ◀ ▲ ▼ ▶ ＋ － linksonder (toetsen `I`/`K` omhoog/omlaag, `J`/`L` links/rechts, `U`/`O` zoomen).
 
 | Tabblad | Wat je ziet |
 | --- | --- |
