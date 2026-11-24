@@ -32,6 +32,8 @@ const h = (html) => {
   return t.content.firstElementChild;
 };
 const eur = (n) => (n ? `€ ${n.toLocaleString("nl-NL", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}` : "—");
+/** Lokaal (dubbelklik) naar de map zelf, online naar GitHub (Vercel toont geen mappen). */
+const src = (local, gh) => (location.protocol === "file:" ? local : `https://github.com/janpieterbaalder/lichtjes-4d-model/${gh}`);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 /** Welke 3D-groepen horen bij een geprint onderdeel (voor oplichten). */
@@ -83,6 +85,15 @@ export function buildUI({ game, input, buzzer, model, state, actions }) {
         <button class="toggle" data-toggle="dims" title="Maten tonen">Maten</button>
         <label class="slider" title="Uit elkaar">Uit elkaar <input type="range" min="0" max="1" step="0.01" value="0" data-explode></label>
       </div>
+      <div class="group cam" title="Camera verschuiven: I/K omhoog/omlaag, J/L links/rechts, U/O zoomen — of rechtermuisknop slepen">
+        <span class="lbl">Camera</span>
+        <button data-cam="x,-1" title="Naar links (J)">◀</button>
+        <button data-cam="y,1" title="Omhoog (I)">▲</button>
+        <button data-cam="y,-1" title="Omlaag (K)">▼</button>
+        <button data-cam="x,1" title="Naar rechts (L)">▶</button>
+        <button data-cam="zoom,-1" title="Inzoomen (U)">＋</button>
+        <button data-cam="zoom,1" title="Uitzoomen (O)">－</button>
+      </div>
     </nav>
     <aside class="panel">
       <div class="tabs">${["Spelen", "Plan", "Onderdelen", "Bouwen", "Elektronica", "Code"].map((t, i) => `<button data-tab="${i}">${t}</button>`).join("")}</div>
@@ -126,6 +137,19 @@ export function buildUI({ game, input, buzzer, model, state, actions }) {
   root.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(+b.dataset.tab)));
   root.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => actions.setView(b.dataset.view)));
   root.querySelectorAll("[data-toggle]").forEach((b) => b.addEventListener("click", () => actions.toggle(b.dataset.toggle)));
+  root.querySelectorAll("[data-cam]").forEach((b) => {
+    const [axis, v] = b.dataset.cam.split(",");
+    const down = (e) => {
+      e.preventDefault();
+      b.setPointerCapture?.(e.pointerId);
+      actions.camButton(axis, +v, true);
+    };
+    const up = () => actions.camButton(axis, +v, false);
+    b.addEventListener("pointerdown", down);
+    b.addEventListener("pointerup", up);
+    b.addEventListener("pointercancel", up);
+    b.addEventListener("lostpointercapture", up);
+  });
   explode.addEventListener("input", () => actions.setExplode(+explode.value));
   $(".panel-toggle", root).addEventListener("click", () => panel.classList.toggle("collapsed"));
 
@@ -154,6 +178,7 @@ export function buildUI({ game, input, buzzer, model, state, actions }) {
       <table class="axes">${AXIS_HELP.map((a) => `<tr><td><i style="background:${a.color}"></i>${a.axis}</td><td>${a.stick}</td><td>${a.values}</td></tr>`).join("")}</table>
       <p class="small">Toetsenbord: <kbd>A</kbd><kbd>D</kbd> x · <kbd>W</kbd><kbd>S</kbd> y · <kbd>↑</kbd><kbd>↓</kbd> z · <kbd>←</kbd><kbd>→</kbd> w · <kbd>spatie</kbd>/<kbd>enter</kbd> = stick indrukken (vasthouden = hint).<br>
       Een PlayStation-controller via USB of Bluetooth werkt ook: sticks bewegen, <b>L3/R3</b> of <b>×</b> = drukken. <span data-s="pad"></span></p>
+      <p class="small"><b>Camera:</b> <kbd>I</kbd><kbd>K</kbd> omhoog/omlaag · <kbd>J</kbd><kbd>L</kbd> links/rechts · <kbd>U</kbd><kbd>O</kbd> in-/uitzoomen, of de knoppen ◀ ▲ ▼ ▶ linksonder. Muis: linksslepen = draaien, rechtsslepen = schuiven, scrollen = zoomen.</p>
       <h3>LED-standen</h3>
       <div class="legend"><span><i class="led off"></i>uit</span><span><i class="led mid"></i>aan (middel)</span><span><i class="led hi"></i>gekozen (fel)</span><span><i class="led breath"></i>gekozen maar uit (ademt)</span></div>
       <h3>Instellingen (ook in de firmware)</h3>
@@ -226,11 +251,12 @@ export function buildUI({ game, input, buzzer, model, state, actions }) {
       <p>Iedere cel heeft precies vier buren (één per as). Een druk wisselt dus altijd vijf lampjes. Wiskundig leuk: voor de tesseract is de drukmatrix zijn eigen inverse, dus <b>elke</b> stand is oplosbaar en de oplossing is uniek — de firmware rekent de hint in één regel uit.</p>
       <h2>Bestanden</h2>
       <ul class="files">
-        <li><a href="stl/" target="_blank">stl/</a> — 11 printklare STL's</li>
+        <li><a href="${src("stl/", "tree/main/stl")}" target="_blank" rel="noopener">stl/</a> — 11 printklare STL's</li>
         <li><a href="firmware/lichtjes4d/lichtjes4d.ino" download>firmware/lichtjes4d/lichtjes4d.ino</a> — Arduino-code</li>
-        <li><a href="wokwi/diagram.json" download>wokwi/</a> — simulatie van de echte firmware</li>
-        <li><a href="docs/BOUWHANDLEIDING.md" target="_blank">docs/BOUWHANDLEIDING.md</a> — alles uit deze werkplaats als tekst om te printen</li>
-        <li><a href="cad/design.mjs" target="_blank">cad/design.mjs</a> — alle maten op één plek (aanpassen + <code>npm run build</code>)</li>
+        <li><a href="${src("wokwi/", "tree/main/wokwi")}" target="_blank" rel="noopener">wokwi/</a> — simulatie van de echte firmware</li>
+        <li><a href="${src("docs/BOUWHANDLEIDING.md", "blob/main/docs/BOUWHANDLEIDING.md")}" target="_blank" rel="noopener">docs/BOUWHANDLEIDING.md</a> — alles uit deze werkplaats als tekst om te printen</li>
+        <li><a href="${src("cad/design.mjs", "blob/main/cad/design.mjs")}" target="_blank" rel="noopener">cad/design.mjs</a> — alle maten op één plek (aanpassen + <code>npm run build</code>)</li>
+        <li><a href="https://github.com/janpieterbaalder/lichtjes-4d-model" target="_blank" rel="noopener">GitHub</a> — het hele project</li>
       </ul>
     </section>`);
   }

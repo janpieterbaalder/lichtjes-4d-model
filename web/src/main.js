@@ -323,9 +323,68 @@ ui = buildUI({
       state.selected = null;
       updateOutline();
     },
+    camButton(axis, value, down) {
+      camButtons[axis] = down ? value : camButtons[axis] === value ? 0 : camButtons[axis];
+    },
     applyState,
   },
 });
+
+/* ------------------------------------------------------------------ camera schuiven en zoomen */
+// Knoppen op het scherm en toetsen: I/K = omhoog/omlaag, J/L = links/rechts, U/O = in-/uitzoomen.
+// Met de muis: linksslepen = draaien, rechtsslepen (of shift+slepen) = schuiven, scrollen = zoomen.
+const camButtons = { x: 0, y: 0, zoom: 0 };
+const CAM_KEYS = {
+  KeyJ: ["x", -1],
+  KeyL: ["x", 1],
+  KeyI: ["y", 1],
+  KeyK: ["y", -1],
+  PageUp: ["y", 1],
+  PageDown: ["y", -1],
+  KeyU: ["zoom", -1],
+  KeyO: ["zoom", 1],
+  NumpadAdd: ["zoom", -1],
+  NumpadSubtract: ["zoom", 1],
+};
+const camKeysDown = new Set();
+window.addEventListener("keydown", (e) => {
+  if (/input|textarea|select/i.test(e.target?.tagName || "") || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (CAM_KEYS[e.code]) {
+    camKeysDown.add(e.code);
+    e.preventDefault();
+  }
+});
+window.addEventListener("keyup", (e) => camKeysDown.delete(e.code));
+window.addEventListener("blur", () => camKeysDown.clear());
+const camRight = new THREE.Vector3();
+const camOff = new THREE.Vector3();
+function moveCamera(dt) {
+  const v = { ...camButtons };
+  for (const code of camKeysDown) {
+    const [axis, val] = CAM_KEYS[code];
+    v[axis] = val;
+  }
+  if (!v.x && !v.y && !v.zoom) return;
+  camTween = null;
+  const dist = camera.position.distanceTo(controls.target);
+  const speed = Math.max(0.12, dist) * 0.8 * dt;
+  camRight.setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
+  camOff.copy(camRight).multiplyScalar(v.x * speed);
+  camOff.y += v.y * speed;
+  camera.position.add(camOff);
+  controls.target.add(camOff);
+  if (controls.target.y < 0.05) {
+    const d = 0.05 - controls.target.y;
+    controls.target.y += d;
+    camera.position.y += d;
+  }
+  if (v.zoom) {
+    const dir = camera.position.clone().sub(controls.target);
+    const len = THREE.MathUtils.clamp(dir.length() * Math.exp(v.zoom * dt * 1.3), controls.minDistance, controls.maxDistance);
+    camera.position.copy(controls.target).add(dir.setLength(len));
+  }
+}
+let lastFrame = performance.now();
 
 /* ------------------------------------------------------------------ animatie */
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -383,6 +442,8 @@ function frame() {
   workshop.printer.update(t);
 
   // camera
+  moveCamera(Math.min(0.05, (now - lastFrame) / 1000));
+  lastFrame = now;
   if (camTween) {
     const k = Math.min(1, (now - camTween.t0) / camTween.dur);
     const e = ease(k);
