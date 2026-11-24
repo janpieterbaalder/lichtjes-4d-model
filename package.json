@@ -1,0 +1,25 @@
+{
+  "name": "lichtjes-4d-model",
+  "version": "1.0.0",
+  "description": "Bouwplan voor een echte 2x2x2x2 Lichtjes-puzzel (tesseract) met Arduino, 3D-printer en code — met 3D-werkplaats.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "stl": "node cad/build.mjs",
+    "web": "node scripts/build-web.mjs",
+    "docs": "node scripts/docs.mjs",
+    "wokwi": "node scripts/wokwi.mjs",
+    "build": "npm run stl && npm run wokwi && npm run docs && npm run web",
+    "test": "node scripts/test-logic.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janpieterbaalder/lichtjes-4d-model.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "manifold-3d": "^3.5.5",
+    "three": "^0.187.0"
+  }
+}
