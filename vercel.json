@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo geen installatie nodig: de site is al gebouwd",
+  "buildCommand": "node scripts/vercel-out.mjs",
+  "outputDirectory": "public"
+}
