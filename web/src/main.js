@@ -323,6 +323,9 @@ ui = buildUI({
       state.selected = null;
       updateOutline();
     },
+    togglePad() {
+      setPadSetting(!padMode());
+    },
     camButton(axis, value, down) {
       camButtons[axis] = down ? value : camButtons[axis] === value ? 0 : camButtons[axis];
     },
@@ -386,16 +389,37 @@ function moveCamera(dt) {
 }
 let lastFrame = performance.now();
 
-/* Touchpad: twee vingers schuiven = camera schuiven (links/rechts en omhoog/omlaag), knijpen = zoomen.
-   Een gewoon muiswiel blijft zoomen. Touchpads herken je aan horizontale of 'gebroken' scrollstappen. */
-let trackpadUntil = 0;
+/* Touchpad: twee vingers vegen = camera schuiven (links/rechts en omhoog/omlaag), knijpen = zoomen.
+   Knijpen komt binnen als scrollen mét ctrl-toets en laten we aan OrbitControls (zoomen).
+   Touchpad-modus staat aan als je hem met de knop vastzet, of zodra een touchpad herkend is
+   (horizontale, gebroken of kleine scrollstappen); daarna blijft hij de hele sessie aan.
+   Zonder touchpad-modus zoomt het scrollwiel van een muis zoals gewoonlijk. */
+const PAD_KEY = "lichtjes-touchpad";
+let padSetting = null; // null = automatisch, true/false = vastgezet met de knop
+try {
+  const s = localStorage.getItem(PAD_KEY);
+  if (s === "1" || s === "0") padSetting = s === "1";
+} catch {}
+let padDetected = false;
+const padMode = () => (padSetting ?? padDetected);
+function setPadSetting(on) {
+  padSetting = on;
+  try {
+    localStorage.setItem(PAD_KEY, on ? "1" : "0");
+  } catch {}
+  ui?.syncPad(padMode());
+}
 container.addEventListener(
   "wheel",
   (e) => {
-    const now = performance.now();
-    const fractional = !Number.isInteger(e.deltaY) || !Number.isInteger(e.deltaX);
-    if (e.deltaMode === 0 && (e.deltaX !== 0 || fractional)) trackpadUntil = now + 400;
-    if (e.ctrlKey || now > trackpadUntil) return; // knijpen of muiswiel → OrbitControls zoomt
+    if (e.ctrlKey) return; // knijpen (of ctrl+scrollen) → OrbitControls zoomt
+    const looksPad =
+      e.deltaMode === 0 && (e.deltaX !== 0 || !Number.isInteger(e.deltaY) || (e.deltaY !== 0 && Math.abs(e.deltaY) < 50));
+    if (looksPad && !padDetected) {
+      padDetected = true;
+      ui?.syncPad(padMode());
+    }
+    if (!padMode()) return; // muiswiel → OrbitControls zoomt
     e.preventDefault();
     e.stopPropagation();
     camTween = null;
@@ -413,6 +437,7 @@ container.addEventListener(
   },
   { capture: true, passive: false },
 );
+ui.syncPad(padMode());
 
 /* ------------------------------------------------------------------ animatie */
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
